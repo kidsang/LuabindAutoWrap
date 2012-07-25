@@ -2,7 +2,16 @@
 import re
 from construct import *
 
+# 需要忽略的关键字
 ignore = ['inline']
+# 支持重载的运算符
+op = ['+', '-', '*', '/', '==', '<', '<=']
+
+# 辅助方法，返回函数参数列表
+# string: 含有参数列表的字符串
+def getParams(string):
+    params = re.search(r'\((.*)\)', string).group(1)
+    return params.split(',')
 
 # 寻找类的构造函数
 # className: 类名
@@ -12,8 +21,7 @@ def findConstructors(className, node):
     for c in node.get_children():
         if str(c.kind) == 'CursorKind.CONSTRUCTOR':
             # 分离参数列表
-            params = re.search(r'\((.*)\)', c.displayname).group(1)
-            params = params.split(',')
+            params = getParams(c.displayname)
             print defConstructor(params)
             
 
@@ -24,23 +32,32 @@ def findConstructors(className, node):
 def findMethod(className, node, lines):
     global indent
     for c in node.get_children():
-        if str(c.kind) == 'CursorKind.CXX_METHOD' \
-           and str(c.spelling).find('operator') == -1: # 跳过运算符重载
-            # 查找返回值
-            ret = lines[c.location.line-1] \
-                  [:c.location.column - 1]
-            # 跳过静态函数
-            if ret.find('static') != -1:
+        if str(c.kind) == 'CursorKind.CXX_METHOD':
+            if str(c.spelling).find('operator') == -1: # 非运算符重载
                 continue
-            # 清除不需要的关键词
-            for i in ignore:
-                ret = ret.replace(i, '')
-            ret = re.sub(r'^\s*', '', ret)
-            # 分离参数列表
-            params = re.search(r'\((.*)\)', c.displayname).group(1)
-            params = params.split(',')
-            print defMethod(className, c.spelling, ret, params)
-            
+                # 查找返回值
+                ret = lines[c.location.line-1] \
+                      [:c.location.column - 1]
+                # 跳过静态函数
+                if ret.find('static') != -1:
+                    continue
+                # 清除不需要的关键词
+                for i in ignore:
+                    ret = ret.replace(i, '')
+                ret = re.sub(r'^\s*', '', ret)
+                # 分离参数列表
+                params = getParams(c.displayname)
+                print defMethod(className, c.spelling, ret, params)
+            else : #运算符重载
+                for o in op:
+                    if c.spelling.replace('operator', '') == o:
+                        # 分离参数列表
+                        params = getParams(c.displayname)
+                        if len(params) != 1 or params[0] == '':
+                            break
+                        print defOperator(o, params)
+                        break
+                        
 
 # 寻找相应名称的类
 # node: 文档根节点

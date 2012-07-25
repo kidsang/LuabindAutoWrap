@@ -1,8 +1,6 @@
 from parse import *
 
 if __name__ == '__main__':
-    #parse('include/OgreVector3.h', ['Vector3'])
-    #parse('include/OgreMath.h', ['Radian', 'Degree', 'Angle', 'Math'])
     parse('include/OgreMath.h', ['Radian', 'Degree', 'Angle', 'Math'])
     parse('include/OgreVector2.h', ['Vector2'])
     parse('include/OgreVector3.h', ['Vector3'])

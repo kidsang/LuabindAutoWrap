@@ -35,3 +35,9 @@ def defMethod(className, methodName, ret, params):
     out += '))'
     out += '&' + className + '::' + methodName + ')'
     return out
+
+def defOperator(op, params):
+    out = '        .def(self '
+    out += op + ' '
+    out += 'other<' + params[0] + '>())'
+    return out
