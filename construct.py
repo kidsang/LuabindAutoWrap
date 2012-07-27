@@ -41,3 +41,12 @@ def defOperator(op, params):
     out += op + ' '
     out += 'other<' + params[0] + '>())'
     return out
+
+def defProperty(className, propertyName):
+    out = '        .def_readonly("' + propertyName + '", '
+    out += '&' + className + '::' + propertyName + ')'
+    return out
+
+def defEnum(name, value):
+    out = '        value("' + name + '", ' + str(value) + '),'
+    return out

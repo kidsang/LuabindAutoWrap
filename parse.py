@@ -3,7 +3,7 @@ import re
 from construct import *
 
 # 需要忽略的关键字
-ignore = ['inline']
+ignore = ['inline', 'virtual']
 # 支持重载的运算符
 op = ['+', '-', '*', '/', '==', '<', '<=']
 # public区域
@@ -14,6 +14,24 @@ pubArea = []
 def getParams(string):
     params = re.search(r'\((.*)\)', string).group(1)
     return params.split(',')
+
+# 寻找公有属性
+# className: 类名
+# node: 类根节点
+def findProperties(className, node):
+    global pubArea
+    for c in node.get_children():
+        if str(c.kind) == 'CursorKind.FIELD_DECL':
+            # 判断public区域
+            pub = False
+            for a in pubArea:
+                if a[0] < c.location.line < a[1]:
+                    pub = True
+                    break
+            if pub == False:
+                continue
+            print defProperty(className, c.spelling)
+            
 
 # 寻找public区域
 # node: 类根节点
@@ -40,7 +58,6 @@ def findPublicArea(node, lines):
 # className: 类名
 # node: 类根节点
 def findConstructors(className, node):
-    global indent
     for c in node.get_children():
         if str(c.kind) == 'CursorKind.CONSTRUCTOR':
             # 判断public区域
@@ -61,7 +78,6 @@ def findConstructors(className, node):
 # node: 类根节点
 # lines: 文件原始内容
 def findMethod(className, node, lines):
-    global indent
     for c in node.get_children():
         if str(c.kind) == 'CursorKind.CXX_METHOD':
             # 判断public区域
@@ -102,7 +118,6 @@ def findMethod(className, node, lines):
 # name: 类名
 # lines: 文件原始内容
 def findClass(node, name, lines):
-    global indent
     if str(node.kind) == 'CursorKind.CLASS_DECL' \
             and str(node.spelling) == name \
             and node.is_definition():
@@ -110,6 +125,7 @@ def findClass(node, name, lines):
         findPublicArea(node, lines)
         findConstructors(name, node)
         findMethod(name, node, lines)
+        findProperties(name, node)
 
     for c in node.get_children():
         findClass(c, name, lines)
