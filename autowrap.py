@@ -9,7 +9,9 @@ if __name__ == '__main__':
     #parse('include/OgreMatrix4.h', ['Matrix4'])
     #parse('include/OgreQuaternion.h', ['Quaternion'])
     #parse('include/OgreCamera.h', ['Camera'])
-    parse('include/OIS/OISPrereqs.h', ['Axis'])
-    parse('include/OIS/OISMouse.h', ['MouseEvent', 'MouseState'])
-    parse('include/OIS/OISKeyboard.h', ['KeyEvent'])
+    #parse('include/OIS/OISPrereqs.h', ['Axis'])
+    #parse('include/OIS/OISMouse.h', ['MouseEvent', 'MouseState'])
+    #parse('include/OIS/OISKeyboard.h', ['KeyEvent'])
+    #parse('include/MyGUI/MyGUI_Widget.h', ['Widget'])
+    parse('include/MyGUI/MyGUI_MouseButton.h', ['MouseButton'])
     

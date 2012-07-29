@@ -9,6 +9,16 @@ op = ['+', '-', '*', '/', '==', '<', '<=']
 # public区域
 pubArea = []
 
+# 辅助方法，判断当前节点是否处于公有区域
+def isPublicArea(node):
+    global pubArea
+    pub = False
+    for a in pubArea:
+        if a[0] < node.location.line < a[1]:
+            pub = True
+            break
+    return pub
+
 # 辅助方法，返回函数参数列表
 # string: 含有参数列表的字符串
 def getParams(string):
@@ -19,16 +29,10 @@ def getParams(string):
 # className: 类名
 # node: 类根节点
 def findProperties(className, node):
-    global pubArea
     for c in node.get_children():
         if str(c.kind) == 'CursorKind.FIELD_DECL':
             # 判断public区域
-            pub = False
-            for a in pubArea:
-                if a[0] < c.location.line < a[1]:
-                    pub = True
-                    break
-            if pub == False:
+            if not isPublicArea(c):
                 continue
             print defProperty(className, c.spelling)
             
@@ -52,7 +56,26 @@ def findPublicArea(node, lines):
                 b = -1
                 pub = False
     if b != -1:
-        pubArea.append([b, 999999])    
+        pubArea.append([b, 999999])
+
+# 寻找类的枚举型
+# node: 类根节点
+def findEnum(node):
+    for c in node.get_children():
+        if str(c.kind) == 'CursorKind.ENUM_DECL':
+            # 判断public区域
+            if not isPublicArea(c):
+                continue
+            print '        //---->', c.displayname
+            print '        .enum_("constants")'
+            print '        ['
+            enu = ''
+            for cc in c.get_children():
+                enu += ' ' * 4 + defEnum(cc.spelling, cc.enum_value) + '\n'
+            enu = enu[:-2]
+            print enu
+            print '        ]'
+            print '        //<----', c.displayname
 
 # 寻找类的构造函数
 # className: 类名
@@ -61,12 +84,7 @@ def findConstructors(className, node):
     for c in node.get_children():
         if str(c.kind) == 'CursorKind.CONSTRUCTOR':
             # 判断public区域
-            pub = False
-            for a in pubArea:
-                if a[0] < c.location.line < a[1]:
-                    pub = True
-                    break
-            if pub == False:
+            if not isPublicArea(c):
                 continue
             # 分离参数列表
             params = getParams(c.displayname)
@@ -81,12 +99,7 @@ def findMethod(className, node, lines):
     for c in node.get_children():
         if str(c.kind) == 'CursorKind.CXX_METHOD':
             # 判断public区域
-            pub = False
-            for a in pubArea:
-                if a[0] < c.location.line < a[1]:
-                    pub = True
-                    break
-            if pub == False:
+            if not isPublicArea(c):
                 continue
             if str(c.spelling).find('operator') == -1: # 非运算符重载
                 # 查找返回值
@@ -118,14 +131,20 @@ def findMethod(className, node, lines):
 # name: 类名
 # lines: 文件原始内容
 def findClass(node, name, lines):
-    if str(node.kind) == 'CursorKind.CLASS_DECL' \
+    if (str(node.kind) == 'CursorKind.CLASS_DECL' \
+        or str(node.kind) == 'CursorKind.STRUCT_DECL') \
             and str(node.spelling) == name \
             and node.is_definition():
+        if str(node.kind) == 'CursorKind.STRUCT_DECL':
+            global pubArea
+            pubArea.append([0, 99999])
+        else:
+            findPublicArea(node, lines)
         print defClass(name)
-        findPublicArea(node, lines)
         findConstructors(name, node)
         findMethod(name, node, lines)
         findProperties(name, node)
+        findEnum(node)
 
     for c in node.get_children():
         findClass(c, name, lines)
